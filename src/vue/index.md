@@ -6,7 +6,6 @@ toc: content
 
 ## vuetest
         
-<!-- <code src="./vuetest.vue"></code> -->
 ```vue
 <script setup lang="ts">
 import  vuetest  from './vuetest.vue';
@@ -33,4 +32,3 @@ import  vuedemo  from './vuedemo.vue';
 </template>
 ```
 
-<!-- <code src="./vuedemo.vue"></code> -->
