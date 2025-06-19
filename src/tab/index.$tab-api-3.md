@@ -14,3 +14,4 @@ export default () => {
 
 <API id='Test4'></API>
 <API id='Obj'></API>
+<API id='PlayerPropsData'></API>

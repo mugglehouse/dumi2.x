@@ -2,6 +2,9 @@
 nav: Components
 title: demo渲染增强
 toc: content
+group:
+  title: 文档渲染
+  order: 1
 demo:
   cols: 2
 ---
@@ -23,7 +26,6 @@ demo:
 ### 使用代码块引入
 1. 不能使用分栏
 2. 可以渲染多个组件，且可以给组件传值
-3. 组件必须使用命名导出
 
 ```tsx
 import { Demo5, Demo6 } from './demo5';

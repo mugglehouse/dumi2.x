@@ -4,7 +4,7 @@ hero:
   description: 新特性演示与展示
   actions:
     - text: Hello
-      link: /components/demo
+      link: /components
     - text: World
       link: /
 features:

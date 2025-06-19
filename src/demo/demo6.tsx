@@ -18,7 +18,7 @@ interface Demo7Props {
     code: string | string[];
 }
 
-export const Demo7: FC<Demo7Props> = ({ title, description, code }) => {
+const Demo7: FC<Demo7Props> = ({ title, description, code }) => {
     return (
         <>
             <h1>{title}</h1>

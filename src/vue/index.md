@@ -1,11 +1,13 @@
 ---
 title: Vue支持
 toc: content
+group:
+  title: 多语言支持
+  order: 2
 ---
 
 
 ## vuetest
-        
 ```vue
 <script setup lang="ts">
 import  vuetest  from './vuetest.vue';

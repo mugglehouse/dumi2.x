@@ -1,6 +1,9 @@
 ---
 title: 自定义主题
 toc: content
+group:
+  title: 主题定制
+  order: 1
 ---
 <!-- <Foo barValue="red"></Foo> -->
 ## 主题结构
