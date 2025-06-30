@@ -5,7 +5,6 @@ group:
   title: 主题定制
   order: 1
 ---
-<!-- <Foo barValue="red"></Foo> -->
 ## 主题结构
 <Tree>
   <ul>
@@ -78,4 +77,4 @@ group:
 </Tree>
 
 ## 全局组件
-<ColorPicker></ColorPicker>
+<!-- <ColorPicker></ColorPicker> -->

@@ -19,4 +19,3 @@ features:
     description: demo实时编辑预览
 ---
 
-react-muggle-ui
