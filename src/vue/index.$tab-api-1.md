@@ -6,3 +6,6 @@
 
 ### 实例方法 (Instance Methods)
 <API id="vuetest" type="imperative"></API>
+
+### typedoc
+<!-- <embed src="../docs/test/interface" ></embed> -->

@@ -36,5 +36,7 @@ export default defineConfig({
   resolve: {
     entryFile: './src/index.ts',
   },
+  // 加载自定义插件
+  // plugins: [path.join(__dirname, '.dumi/plugin')],
   // presets: ['@dumijs/preset-vue'],
 });

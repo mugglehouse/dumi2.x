@@ -1,7 +1,7 @@
 {
-  "name": "react-muggle-ui",
+  "name": "@muggle/dumi",
   "version": "0.0.1",
-  "description": "A react library developed with dumi",
+  "description": "A vue library developed with dumi",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "dev": "dumi dev",
     "build": "father build",
     "build:watch": "father dev",
-    "docs:build": "dumi build",
+    "docs:build": "npx typedoc && dumi build",
     "docs:preview": "dumi preview",
     "prepare": "husky install && dumi setup",
     "doctor": "father doctor",
@@ -71,7 +71,9 @@
     "prettier-plugin-packagejson": "^2.2.18",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "stylelint": "^14.9.1"
+    "stylelint": "^14.9.1",
+    "typedoc": "^0.28.7",
+    "typedoc-plugin-markdown": "^4.7.0"
   },
   "dependencies": {
     "antd": "^5.26.1",
