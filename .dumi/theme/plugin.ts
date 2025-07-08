@@ -387,12 +387,47 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
       const typeValue = node.type.getText();
       const { description, tags } = jsDocComment ? parseTSDocComment(jsDocComment) : { description: '', tags: {} };
       
-      apiItems.push({
+      // 检查是否为对象类型字面量
+      const properties: Array<{
+        name: string;
+        type: string;
+        description: string;
+        default?: string;
+        required?: boolean;
+      }> = [];
+      
+      // 如果是对象类型字面量，解析其属性
+      if (ts.isTypeLiteralNode(node.type)) {
+        node.type.members.forEach(member => {
+          if (ts.isPropertySignature(member) && member.name) {
+            const propName = member.name.getText();
+            const propType = member.type ? member.type.getText() : 'any';
+            const propJsDoc = ts.getJSDocCommentsAndTags(member).map((doc: any) => doc.getText()).join('\n');
+            const { description: propDesc, tags: propTags } = propJsDoc ? parseTSDocComment(propJsDoc) : { description: '', tags: {} };
+            
+            properties.push({
+              name: propName,
+              type: propType,
+              description: propDesc,
+              required: !member.questionToken
+            });
+          }
+        });
+      }
+      
+      const apiItem: ApiItem = {
         name: typeName,
         type: 'type',
         description,
         value: typeValue
-      });
+      };
+      
+      // 如果有解析到属性，添加到API项中
+      if (properties.length > 0) {
+        apiItem.properties = properties;
+      }
+      
+      apiItems.push(apiItem);
     }
     
     // 函数声明

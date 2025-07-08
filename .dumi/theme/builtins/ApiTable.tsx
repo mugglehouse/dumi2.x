@@ -101,6 +101,31 @@ const ApiTable: React.FC<ApiTableProps> = ({ id }) => {
             <div className="api-type-definition">
               <h3 className="api-subtitle">类型定义</h3>
               <pre className="api-code-block"><code>{item.value}</code></pre>
+              
+              {/* 添加类型别名属性表格 */}
+              {item.properties && item.properties.length > 0 && (
+                <div className="api-properties">
+                  <h3 className="api-subtitle">属性</h3>
+                  <table className="api-table">
+                    <thead>
+                      <tr>
+                        <th>名称</th>
+                        <th>类型</th>
+                        <th>描述</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {item.properties.map((prop) => (
+                        <tr key={prop.name}>
+                          <td className="api-prop-name">{prop.name}{prop.required ? '' : <span className="api-optional">?</span>}</td>
+                          <td className="api-prop-type"><code>{prop.type}</code></td>
+                          <td className="api-prop-desc">{prop.description || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
