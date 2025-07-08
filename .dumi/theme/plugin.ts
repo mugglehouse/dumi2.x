@@ -53,6 +53,11 @@ interface ApiItem {
       description: string;
     };
   }>;
+  members?: Array<{ // 用于枚举成员
+    name: string;
+    value?: string;
+    description: string;
+  }>;
 }
 
 /**
@@ -274,8 +279,34 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
     // 获取节点的JSDoc注释
     const jsDocComment = ts.getJSDocCommentsAndTags(node).map((doc: any) => doc.getText()).join('\n');
     
+    // 枚举声明
+    if (ts.isEnumDeclaration(node) && node.name) {
+      const enumName = node.name.text;
+      const { description, tags } = jsDocComment ? parseTSDocComment(jsDocComment) : { description: '', tags: {} };
+      
+      const members = node.members.map(member => {
+        const memberName = member.name.getText();
+        const memberValue = member.initializer ? member.initializer.getText() : undefined;
+        const memberJsDoc = ts.getJSDocCommentsAndTags(member).map((doc: any) => doc.getText()).join('\n');
+        const { description: memberDesc, tags: memberTags } = memberJsDoc ? parseTSDocComment(memberJsDoc) : { description: '', tags: {} };
+        
+        return {
+          name: memberName,
+          value: memberValue,
+          description: memberDesc
+        };
+      });
+      
+      apiItems.push({
+        name: enumName,
+        type: 'enum',
+        description,
+        members
+      });
+    }
+    
     // 接口声明
-    if (ts.isInterfaceDeclaration(node) && node.name) {
+    else if (ts.isInterfaceDeclaration(node) && node.name) {
       const interfaceName = node.name.text;
       const { description, tags } = jsDocComment ? parseTSDocComment(jsDocComment) : { description: '', tags: {} };
       
@@ -704,6 +735,33 @@ function generateApiTable(apiItems: ApiItem[]): string {
       }
     } else if (item.type === 'type') {
       markdown += `**类型定义:** \`${item.value}\`\n\n`;
+      
+      // 类型别名属性表格
+      if (item.properties && item.properties.length > 0) {
+        markdown += `### 属性\n\n`;
+        markdown += `| 名称 | 类型 | 描述 |\n`;
+        markdown += `| ---- | ---- | ---- |\n`;
+        
+        item.properties.forEach(prop => {
+          markdown += `| ${prop.name}${prop.required ? '' : '?'} | \`${prop.type}\` | ${prop.description || '-'} |\n`;
+        });
+        
+        markdown += '\n';
+      }
+    } else if (item.type === 'enum') {
+      // 枚举成员表格
+      if (item.members && item.members.length > 0) {
+        markdown += `### 枚举成员\n\n`;
+        markdown += `| 名称 | 值 | 描述 |\n`;
+        markdown += `| ---- | -- | ---- |\n`;
+        
+        item.members.forEach(member => {
+          const value = member.value ? member.value : '(auto)';
+          markdown += `| ${member.name} | \`${value}\` | ${member.description || '-'} |\n`;
+        });
+        
+        markdown += '\n';
+      }
     }
   });
   

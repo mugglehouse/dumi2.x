@@ -59,6 +59,8 @@ export function myFunction(param1: string, param2: number): boolean {
 
 <ApiTable id="add"></ApiTable>
 
+<ApiTable id="AddParams"></ApiTable>
+
 <ApiTable id="WizardInterface"></ApiTable>
 
 <ApiTable id="sayHello"></ApiTable>

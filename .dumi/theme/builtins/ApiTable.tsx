@@ -45,6 +45,11 @@ interface ApiItem {
       description: string;
     };
   }>;
+  members?: Array<{
+    name: string;
+    value?: string;
+    description: string;
+  }>;
 }
 
 const ApiTable: React.FC<ApiTableProps> = ({ id }) => {
@@ -120,6 +125,36 @@ const ApiTable: React.FC<ApiTableProps> = ({ id }) => {
                           <td className="api-prop-name">{prop.name}{prop.required ? '' : <span className="api-optional">?</span>}</td>
                           <td className="api-prop-type"><code>{prop.type}</code></td>
                           <td className="api-prop-desc">{prop.description || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 枚举定义 */}
+          {item.type === 'enum' && (
+            <div className="api-enum-definition">
+              <h3 className="api-subtitle">枚举定义</h3>
+              
+              {item.members && item.members.length > 0 && (
+                <div className="api-enum-members">
+                  <table className="api-table">
+                    <thead>
+                      <tr>
+                        <th>名称</th>
+                        <th>值</th>
+                        <th>描述</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {item.members.map((member) => (
+                        <tr key={member.name}>
+                          <td className="api-enum-name">{member.name}</td>
+                          <td className="api-enum-value"><code>{member.value || '(auto)'}</code></td>
+                          <td className="api-enum-desc">{member.description || '-'}</td>
                         </tr>
                       ))}
                     </tbody>

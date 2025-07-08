@@ -50,11 +50,16 @@ export interface MuggleInterface {
   }
   
   /** 类型 */
-  export type MyType = 1 | 2 | 3 | 4
+  export enum MyType {
+    A = 1,
+    B = 2,
+    C = 3,
+    D = 4
+  }
 
-interface AddParams {
+export interface AddParams {
     a: number;
-    b: number[];
+    b: MyType;
   }
 /**
  * 这是一个加法函数。
