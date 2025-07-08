@@ -7,3 +7,4 @@ export { default as vuedemo } from './vue/vuedemo.vue';
 export { type MuggleInterface, MyClass ,type MyType, add} from './ts/test';
 export { sum, greet, processText, type WizardInterface } from './ts/test3';
 export { sayHello } from './ts/test/hello';
+export { testTypes, identity, type AdvancedTypes, complexTypes, type ComplexType } from './ts/test-types';
