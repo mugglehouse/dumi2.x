@@ -431,6 +431,79 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
         returns
       });
     }
+    
+    // 变量声明（箭头函数或函数表达式）
+    else if (ts.isVariableStatement(node)) {
+      // 检查是否有export修饰符
+      const hasExportModifier = node.modifiers?.some(modifier => 
+        modifier.kind === ts.SyntaxKind.ExportKeyword
+      );
+      
+      if (hasExportModifier) {
+        // 处理变量声明
+        node.declarationList.declarations.forEach(declaration => {
+          // 确保有名称和初始化器
+          if (declaration.name && declaration.initializer) {
+            const varName = declaration.name.getText();
+            
+            // 检查初始化器是否为箭头函数或函数表达式
+            const isArrowFunction = ts.isArrowFunction(declaration.initializer);
+            const isFunctionExpression = ts.isFunctionExpression(declaration.initializer);
+            
+            if (isArrowFunction || isFunctionExpression) {
+              const { description, tags } = jsDocComment ? parseTSDocComment(jsDocComment) : { description: '', tags: {} };
+              
+              // 获取函数表达式
+              const funcExpr = declaration.initializer as ts.ArrowFunction | ts.FunctionExpression;
+              
+              // 解析参数
+              const params = funcExpr.parameters.map(param => {
+                const paramName = param.name.getText();
+                const paramType = param.type ? param.type.getText() : 'any';
+                const paramDesc = tags[`param ${paramName}`] || '';
+                const hasDefault = param.initializer !== undefined;
+                const defaultValue = hasDefault ? param.initializer?.getText() : undefined;
+                
+                return {
+                  name: paramName,
+                  type: paramType,
+                  description: paramDesc,
+                  default: defaultValue,
+                  required: !param.questionToken && !hasDefault
+                };
+              });
+              
+              // 获取返回类型
+              let returnType: string;
+              if (funcExpr.type) {
+                returnType = funcExpr.type.getText();
+              } else if (isArrowFunction && ts.isBlock(funcExpr.body)) {
+                // 箭头函数体是代码块，尝试推断返回类型
+                returnType = 'void';
+              } else if (isArrowFunction) {
+                // 箭头函数体是表达式，类型为表达式类型
+                returnType = 'expression';
+              } else {
+                returnType = 'void';
+              }
+              
+              const returns = {
+                type: returnType,
+                description: tags.returns || ''
+              };
+              
+              apiItems.push({
+                name: varName,
+                type: 'function',
+                description,
+                params,
+                returns
+              });
+            }
+          }
+        });
+      }
+    }
 
     ts.forEachChild(node, visit);
   }
