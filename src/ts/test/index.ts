@@ -26,7 +26,7 @@ export interface MuggleInterface {
   
     /**
      * 静态方法
-     * @param param 参数，字符串列表
+     * @param param - 参数，字符串列表
      * @returns 返回 Promise 对象
      */
     static staticMethod1(param: string[]) {
@@ -54,11 +54,11 @@ export interface MuggleInterface {
   
 /**
  * 这是一个加法函数。
- * @param a 第一个加数
- * @param b 第二个加数
+ * @param a - 第一个加数
+ * @param b - 第二个加数
  * @returns 两个加数的和
  */
 export function add(a: number = 0, b: number = 0): number {
     return a + b;
-  }
+}
   

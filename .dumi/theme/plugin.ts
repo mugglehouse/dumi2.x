@@ -63,6 +63,7 @@ function parseTSDocComment(commentText: string): { description: string; tags: Re
   const description: string[] = [];
   const tags: Record<string, any> = {};
   let currentTag: string | null = null;
+  let currentTagName: string | null = null;
   let currentTagContent: string[] = [];
 
   lines.forEach(line => {
@@ -72,15 +73,36 @@ function parseTSDocComment(commentText: string): { description: string; tags: Re
     if (trimmedLine.startsWith('@')) {
       // 如果有当前标签，保存它
       if (currentTag) {
-        tags[currentTag] = currentTagContent.join(' ').trim();
+        if (currentTag === 'param' && currentTagName) {
+          tags[`param ${currentTagName}`] = currentTagContent.join(' ').trim();
+        } else {
+          tags[currentTag] = currentTagContent.join(' ').trim();
+        }
         currentTagContent = [];
+        currentTagName = null;
       }
       
       // 解析新标签
       const tagMatch = trimmedLine.match(/^@(\w+)(?:\s+(.*))?$/);
       if (tagMatch) {
         currentTag = tagMatch[1];
-        currentTagContent = tagMatch[2] ? [tagMatch[2]] : [];
+        const tagContent = tagMatch[2] || '';
+        
+        // 特殊处理@param标签，提取参数名和描述
+        if (currentTag === 'param' && tagContent) {
+          // 尝试匹配 "@param name - description" 或 "@param name description" 格式
+          const paramMatch = tagContent.match(/^(\S+)(?:\s+-\s+|\s+)(.*)$/);
+          if (paramMatch) {
+            currentTagName = paramMatch[1];
+            currentTagContent = paramMatch[2] ? [paramMatch[2]] : [];
+          } else {
+            // 如果只有参数名，没有描述
+            currentTagName = tagContent.trim();
+            currentTagContent = [];
+          }
+        } else {
+          currentTagContent = tagContent ? [tagContent] : [];
+        }
       }
     } else if (currentTag) {
       // 继续当前标签的内容
@@ -95,7 +117,11 @@ function parseTSDocComment(commentText: string): { description: string; tags: Re
 
   // 保存最后一个标签
   if (currentTag) {
-    tags[currentTag] = currentTagContent.join(' ').trim();
+    if (currentTag === 'param' && currentTagName) {
+      tags[`param ${currentTagName}`] = currentTagContent.join(' ').trim();
+    } else {
+      tags[currentTag] = currentTagContent.join(' ').trim();
+    }
   }
 
   return {
@@ -315,7 +341,8 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
             const params = member.parameters.map(param => {
               const paramName = param.name.getText();
               const paramType = param.type ? param.type.getText() : 'any';
-              const paramDesc = methodTags[`param ${paramName}`] || methodTags[`param`] || '';
+              // 获取参数描述，使用param_{name}格式的标签
+              const paramDesc = methodTags[`param ${paramName}`] || '';
               const hasDefault = param.initializer !== undefined;
               const defaultValue = hasDefault ? param.initializer?.getText() : undefined;
               
@@ -376,7 +403,8 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
       const params = node.parameters.map(param => {
         const paramName = param.name.getText();
         const paramType = param.type ? param.type.getText() : 'any';
-        const paramDesc = tags[`param ${paramName}`] || tags[`param`] || '';
+        // 获取参数描述，使用param_{name}格式的标签
+        const paramDesc = tags[`param ${paramName}`] || '';
         const hasDefault = param.initializer !== undefined;
         const defaultValue = hasDefault ? param.initializer?.getText() : undefined;
         

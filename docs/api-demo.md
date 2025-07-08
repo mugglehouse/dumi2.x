@@ -53,5 +53,11 @@ export function myFunction(param1: string, param2: number): boolean {
 
 <ApiTable id="MuggleInterface"></ApiTable>
 
+<ApiTable id="MyClass"></ApiTable>
+
+<ApiTable id="MyType"></ApiTable>
+
+<ApiTable id="add"></ApiTable>
+
 22222
 
