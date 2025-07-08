@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './ApiTable.less';
 
 interface ApiTableProps {
-  src: string;
-  id?: string;
+  id: string;
 }
 
 interface ApiItem {
@@ -48,7 +47,7 @@ interface ApiItem {
   }>;
 }
 
-const ApiTable: React.FC<ApiTableProps> = ({ src, id }) => {
+const ApiTable: React.FC<ApiTableProps> = ({ id }) => {
   const [apiData, setApiData] = useState<ApiItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +57,7 @@ const ApiTable: React.FC<ApiTableProps> = ({ src, id }) => {
       try {
         setLoading(true);
         const url = new URL('/api/ts-api', window.location.origin);
-        url.searchParams.append('path', src);
-        if (id) {
-          url.searchParams.append('id', id);
-        }
+        url.searchParams.append('id', id);
         
         const response = await fetch(url.toString());
         
@@ -79,7 +75,7 @@ const ApiTable: React.FC<ApiTableProps> = ({ src, id }) => {
     };
 
     fetchApiData();
-  }, [src, id]);
+  }, [id]);
 
   if (loading) {
     return <div className="api-loading">加载中...</div>;
@@ -90,7 +86,7 @@ const ApiTable: React.FC<ApiTableProps> = ({ src, id }) => {
   }
 
   if (!apiData || apiData.length === 0) {
-    return <div className="api-error">未找到API定义{id ? `：${id}` : ''}</div>;
+    return <div className="api-error">未找到API定义：{id}</div>;
   }
 
   return (

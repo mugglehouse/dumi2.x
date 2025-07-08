@@ -9,6 +9,8 @@ const apiCache = new Map<string, any>();
 const fileWatchers = new Map<string, fs.FSWatcher>();
 // 已处理的文件，用于避免循环引用
 const processedFiles = new Set<string>();
+// 存储入口文件中的导出模块
+const exportedModules = new Map<string, ApiItem>();
 
 // 解析的API类型
 interface ApiItem {
@@ -103,11 +105,31 @@ function parseTSDocComment(commentText: string): { description: string; tags: Re
 }
 
 /**
- * 解析导出声明
+ * 解析导出声明，仅处理具名导出
  */
-function parseExportDeclaration(node: ts.ExportDeclaration, sourceFile: ts.SourceFile, basePath: string, apiItems: ApiItem[]): void {
+function parseExportDeclaration(node: ts.ExportDeclaration, sourceFile: ts.SourceFile, basePath: string): void {
   // 如果没有导出子句或模块说明符，则不处理
   if (!node.exportClause || !node.moduleSpecifier) {
+    return;
+  }
+  
+  // 仅处理具名导出
+  if (!ts.isNamedExports(node.exportClause)) {
+    return;
+  }
+  
+  // 获取导出的模块名称列表
+  const exportNames = node.exportClause.elements.map(e => {
+    // 处理 "export { type X }" 的情况，保留类型标记
+    const isTypeOnly = e.isTypeOnly;
+    return {
+      name: e.name.text,
+      isTypeOnly
+    };
+  });
+  
+  // 如果没有导出项，则不处理
+  if (exportNames.length === 0) {
     return;
   }
   
@@ -180,15 +202,14 @@ function parseExportDeclaration(node: ts.ExportDeclaration, sourceFile: ts.Sourc
   // 解析导入的文件
   const importedApiItems = parseTypeScriptFile(modulePath);
   
-  // 如果是命名导出，只保留指定的导出项
-  if (ts.isNamedExports(node.exportClause)) {
-    const exportNames = node.exportClause.elements.map(e => e.name.text);
-    const filteredItems = importedApiItems.filter(item => exportNames.includes(item.name));
-    apiItems.push(...filteredItems);
-  } else {
-    // 如果是命名空间导出或其他形式，保留所有导出项
-    apiItems.push(...importedApiItems);
-  }
+  // 只保留指定的导出项
+  exportNames.forEach(({ name, isTypeOnly }) => {
+    const matchedItem = importedApiItems.find(item => item.name === name);
+    if (matchedItem) {
+      // 将找到的项添加到导出模块映射中
+      exportedModules.set(name, matchedItem);
+    }
+  });
 }
 
 /**
@@ -221,7 +242,7 @@ function parseTypeScriptFile(filePath: string): ApiItem[] {
   function visit(node: ts.Node) {
     // 处理导出声明（二次导出）
     if (ts.isExportDeclaration(node)) {
-      parseExportDeclaration(node, sourceFile, basePath, apiItems);
+      parseExportDeclaration(node, sourceFile, basePath);
     }
     
     // 获取节点的JSDoc注释
@@ -413,110 +434,60 @@ function watchFile(filePath: string, onUpdate: () => void) {
 }
 
 /**
- * 查找并解析TS文件
+ * 解析入口文件
  */
-function findAndParseFile(filePattern: string, api: IApi): ApiItem[] | null {
-  // 清空已处理文件集合，避免缓存影响
+function parseEntryFile(api: IApi): boolean {
+  // 清空已处理文件集合和导出模块映射
   processedFiles.clear();
+  exportedModules.clear();
   
   // 从配置中获取源文件路径
   const config = api.config.themeConfig as Record<string, any> || {};
   const apiConfig = config.apiConfig || {};
   
   const basePath = process.cwd();
-  const srcPath = path.join(basePath, apiConfig.sourcePath || 'src');
-  const tsPath = apiConfig.tsPath || 'ts';
-  const tsDir = path.join(srcPath, tsPath);
+  const sourcePath = path.join(basePath, apiConfig.sourcePath || 'src/index.ts');
   
-  // 支持的文件扩展名
-  const possibleExtensions = apiConfig.extensions || ['.ts', '.tsx'];
-  
-  // 尝试直接查找文件
-  for (const ext of possibleExtensions) {
-    // 检查指定的ts目录
-    const filePath = path.join(tsDir, `${filePattern}${ext}`);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      // 如果缓存中没有该文件的解析结果，或者需要重新解析
-      if (!apiCache.has(filePath)) {
-        const apiItems = parseTypeScriptFile(filePath);
-        apiCache.set(filePath, apiItems);
-        
-        // 监听文件变化
-        watchFile(filePath, () => {
-          processedFiles.clear(); // 清空已处理文件集合
-          const updatedApiItems = parseTypeScriptFile(filePath);
-          apiCache.set(filePath, updatedApiItems);
-        });
+  // 如果配置的是目录，则尝试查找index文件
+  let entryPath = sourcePath;
+  if (fs.existsSync(sourcePath) && fs.statSync(sourcePath).isDirectory()) {
+    const extensions = ['.ts', '.tsx'];
+    let foundFile = false;
+    
+    for (const ext of extensions) {
+      const indexPath = path.join(sourcePath, `index${ext}`);
+      if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
+        entryPath = indexPath;
+        foundFile = true;
+        break;
       }
-      
-      return apiCache.get(filePath);
     }
     
-    // 检查src目录
-    const srcFilePath = path.join(srcPath, `${filePattern}${ext}`);
-    if (fs.existsSync(srcFilePath) && fs.statSync(srcFilePath).isFile()) {
-      if (!apiCache.has(srcFilePath)) {
-        const apiItems = parseTypeScriptFile(srcFilePath);
-        apiCache.set(srcFilePath, apiItems);
-        
-        watchFile(srcFilePath, () => {
-          processedFiles.clear(); // 清空已处理文件集合
-          const updatedApiItems = parseTypeScriptFile(srcFilePath);
-          apiCache.set(srcFilePath, updatedApiItems);
-        });
-      }
-      
-      return apiCache.get(srcFilePath);
+    if (!foundFile) {
+      console.warn(`入口文件不存在: ${sourcePath}/index.ts`);
+      return false;
     }
+  } else if (!fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isFile()) {
+    console.warn(`入口文件不存在: ${sourcePath}`);
+    return false;
   }
   
-  // 如果没有找到直接匹配的文件，检查是否是目录
-  const dirPath = path.join(tsDir, filePattern);
-  if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
-    // 尝试查找目录中的index文件
-    for (const ext of possibleExtensions) {
-      const indexPath = path.join(dirPath, `index${ext}`);
-      if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
-        if (!apiCache.has(indexPath)) {
-          const apiItems = parseTypeScriptFile(indexPath);
-          apiCache.set(indexPath, apiItems);
-          
-          watchFile(indexPath, () => {
-            processedFiles.clear();
-            const updatedApiItems = parseTypeScriptFile(indexPath);
-            apiCache.set(indexPath, updatedApiItems);
-          });
-        }
-        
-        return apiCache.get(indexPath);
-      }
-    }
+  try {
+    // 解析入口文件
+    parseTypeScriptFile(entryPath);
+    
+    // 监听入口文件变化
+    watchFile(entryPath, () => {
+      processedFiles.clear();
+      exportedModules.clear();
+      parseTypeScriptFile(entryPath);
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`解析入口文件 ${entryPath} 时出错:`, error);
+    return false;
   }
-  
-  // 检查src目录下是否是目录
-  const srcDirPath = path.join(srcPath, filePattern);
-  if (fs.existsSync(srcDirPath) && fs.statSync(srcDirPath).isDirectory()) {
-    // 尝试查找目录中的index文件
-    for (const ext of possibleExtensions) {
-      const indexPath = path.join(srcDirPath, `index${ext}`);
-      if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
-        if (!apiCache.has(indexPath)) {
-          const apiItems = parseTypeScriptFile(indexPath);
-          apiCache.set(indexPath, apiItems);
-          
-          watchFile(indexPath, () => {
-            processedFiles.clear();
-            const updatedApiItems = parseTypeScriptFile(indexPath);
-            apiCache.set(indexPath, updatedApiItems);
-          });
-        }
-        
-        return apiCache.get(indexPath);
-      }
-    }
-  }
-  
-  return null;
 }
 
 /**
@@ -604,74 +575,21 @@ function generateApiTable(apiItems: ApiItem[]): string {
 }
 
 export default (api: IApi) => {
-  // 初始化阶段扫描所有TS文件
-  const scanTsFiles = () => {
-    // 清空已处理文件集合
-    processedFiles.clear();
-    
-    // 从配置中获取源文件路径
-    const config = api.config.themeConfig as Record<string, any> || {};
-    const apiConfig = config.apiConfig || {};
-    
-    const basePath = process.cwd();
-    const srcPath = path.join(basePath, apiConfig.sourcePath || 'src');
-    const tsPath = apiConfig.tsPath || 'ts';
-    const tsDir = path.join(srcPath, tsPath);
-    
-    // 检查TS目录是否存在
-    if (fs.existsSync(tsDir)) {
-      // 递归扫描目录函数
-      const scanDirectory = (dir: string) => {
-        const files = fs.readdirSync(dir);
-        files.forEach(file => {
-          const filePath = path.join(dir, file);
-          const stat = fs.statSync(filePath);
-          
-          if (stat.isDirectory()) {
-            // 递归扫描子目录
-            scanDirectory(filePath);
-          } else if (stat.isFile()) {
-            const ext = path.extname(file);
-            const possibleExtensions = apiConfig.extensions || ['.ts', '.tsx'];
-            
-            if (possibleExtensions.includes(ext)) {
-              try {
-                const apiItems = parseTypeScriptFile(filePath);
-                apiCache.set(filePath, apiItems);
-                
-                // 监听文件变化
-                watchFile(filePath, () => {
-                  processedFiles.clear(); // 清空已处理文件集合
-                  try {
-                    const updatedApiItems = parseTypeScriptFile(filePath);
-                    apiCache.set(filePath, updatedApiItems);
-                  } catch (error) {
-                    console.error(`解析文件 ${filePath} 时出错:`, error);
-                  }
-                });
-              } catch (error) {
-                console.error(`初始扫描文件 ${filePath} 时出错:`, error);
-              }
-            }
-          }
-        });
-      };
-      
-      // 开始递归扫描
-      scanDirectory(tsDir);
-    }
+  // 初始化阶段解析入口文件
+  const initializePlugin = () => {
+    parseEntryFile(api);
   };
 
-  // 在开发服务器启动时扫描文件
+  // 在开发服务器启动时初始化
   api.register({
     key: 'onDevCompileDone',
-    fn: scanTsFiles,
+    fn: initializePlugin,
   });
 
-  // 在构建前扫描文件
+  // 在构建前初始化
   api.register({
     key: 'onBuildBefore',
-    fn: scanTsFiles,
+    fn: initializePlugin,
   });
 
   // 注册自定义Markdown标签解析器
@@ -684,23 +602,19 @@ export default (api: IApi) => {
           const token = tokens[idx];
           const content = token.content;
           
-          // 匹配<ApiTable src="文件名" />标签，同时支持可选的id属性
-          const apiTableMatch = content.match(/<ApiTable\s+src="([^"]+)"(?:\s+id="([^"]+)")?\s*\/?>/);
+          // 匹配<ApiTable id="模块名" />标签
+          const apiTableMatch = content.match(/<ApiTable\s+id="([^"]+)"\s*\/?>/);
           if (apiTableMatch) {
-            const filePath = apiTableMatch[1];
-            const id = apiTableMatch[2]; // 获取id属性，如果没有则为undefined
-            const apiItems = findAndParseFile(filePath, api);
+            const id = apiTableMatch[1];
+            
+            // 从导出模块映射中查找对应的模块
+            const apiItem = exportedModules.get(id);
             
             // 返回处理后的内容
-            if (apiItems) {
-              // 如果指定了id，则只过滤出对应的API项
-              const filteredItems = id ? apiItems.filter(item => item.name === id) : apiItems;
-              if (id && filteredItems.length === 0) {
-                return `<div style="color: red">未找到API定义: ${id}</div>`;
-              }
-              return generateApiTable(filteredItems);
+            if (apiItem) {
+              return generateApiTable([apiItem]);
             } else {
-              return `<div style="color: red">未找到文件: ${filePath}</div>`;
+              return `<div style="color: red">未找到API定义: ${id}</div>`;
             }
           }
           
@@ -723,25 +637,19 @@ export default (api: IApi) => {
   // 注册API路由中间件，用于前端获取API数据
   api.onBeforeMiddleware(({ app }: { app: any }) => {
     app.get('/api/ts-api', (req: any, res: any) => {
-      const filePath = req.query.path as string;
-      const id = req.query.id as string; // 添加id参数
+      const id = req.query.id as string;
       
-      if (!filePath) {
-        return res.status(400).json({ error: '缺少path参数' });
+      if (!id) {
+        return res.status(400).json({ error: '缺少id参数' });
       }
       
-      const apiItems = findAndParseFile(filePath, api);
-      if (apiItems) {
-        // 如果提供了id，则筛选出特定的模块
-        const filteredItems = id ? apiItems.filter(item => item.name === id) : apiItems;
-        
-        if (id && filteredItems.length === 0) {
-          return res.status(404).json({ error: `未找到API定义: ${id}` });
-        }
-        
-        res.json(filteredItems);
+      // 从导出模块映射中查找对应的模块
+      const apiItem = exportedModules.get(id);
+      
+      if (apiItem) {
+        res.json([apiItem]);
       } else {
-        res.status(404).json({ error: `未找到文件: ${filePath}` });
+        res.status(404).json({ error: `未找到API定义: ${id}` });
       }
     });
   });

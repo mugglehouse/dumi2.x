@@ -1,5 +1,5 @@
 ### tsx
 
-<ApiTable src="ts/test"></ApiTable>
+<!-- <ApiTable src="ts/test"></ApiTable> -->
 
 1111

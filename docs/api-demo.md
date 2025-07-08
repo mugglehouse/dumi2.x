@@ -51,7 +51,7 @@ export function myFunction(param1: string, param2: number): boolean {
 
 ## 使用ApiTable组件
 
-<ApiTable src="index" id="MuggleInterface"></ApiTable>
+<ApiTable id="MuggleInterface"></ApiTable>
 
 22222
 
