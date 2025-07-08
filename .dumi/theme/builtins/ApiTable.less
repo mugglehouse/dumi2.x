@@ -1,0 +1,176 @@
+@import '../styles/variables.less';
+
+.api-table-container {
+  margin-bottom: 40px;
+  color: @c-text;
+}
+
+.api-item {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid @c-border-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.api-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: @c-primary;
+  padding-bottom: 8px;
+  border-bottom: 1px solid @c-border-light;
+}
+
+.api-description {
+  margin-bottom: 20px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.api-subtitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 24px 0 16px;
+  color: @c-text;
+}
+
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 14px;
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid @c-border-light;
+  }
+
+  th {
+    background-color: #f7f8fa;
+    font-weight: 600;
+    color: @c-text;
+  }
+
+  tr:hover {
+    background-color: #f7f9fb;
+  }
+}
+
+.api-prop-name {
+  font-weight: 600;
+  color: @c-text;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.api-optional {
+  color: @c-text-note;
+  font-size: 14px;
+  margin-left: 2px;
+}
+
+.api-prop-type {
+  code {
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: #f1f2f3;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 13px;
+    color: @c-text-secondary;
+  }
+}
+
+.api-prop-default {
+  color: @c-text-secondary;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 13px;
+}
+
+.api-prop-desc {
+  color: @c-text-secondary;
+  line-height: 1.5;
+}
+
+.api-method {
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed @c-border-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.api-method-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: @c-text;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.api-method-desc {
+  margin-bottom: 16px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.api-param-title, .api-return-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: @c-text;
+}
+
+.api-return-value {
+  margin-top: 8px;
+  line-height: 1.5;
+  
+  code {
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: #f1f2f3;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 13px;
+    color: @c-text-secondary;
+  }
+}
+
+.api-code-block {
+  background-color: #f7f8fa;
+  padding: 16px;
+  border-radius: 4px;
+  overflow: auto;
+  margin: 16px 0;
+  
+  code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 13px;
+    color: @c-text;
+    line-height: 1.5;
+  }
+}
+
+.api-type-definition {
+  margin-bottom: 24px;
+}
+
+.api-loading {
+  padding: 20px;
+  text-align: center;
+  color: @c-text-secondary;
+  font-size: 14px;
+}
+
+.api-error {
+  padding: 16px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+  color: @c-error;
+  font-size: 14px;
+  margin-bottom: 24px;
+} 

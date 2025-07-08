@@ -30,6 +30,15 @@ export default defineConfig({
           ]
         }
       ]
+    },
+    // 自定义API解析器配置
+    apiConfig: {
+      // 源代码所在路径，默认为 'src'
+      sourcePath: 'src',
+      // TypeScript文件所在子目录，默认为 'ts'
+      tsPath: 'ts',
+      // 支持的文件扩展名，默认为 ['.ts', '.tsx']
+      extensions: ['.ts', '.tsx']
     }
   },
   apiParser: {},
@@ -37,6 +46,6 @@ export default defineConfig({
     entryFile: './src/index.ts',
   },
   // 加载自定义插件
-  // plugins: [path.join(__dirname, '.dumi/plugin')],
+  // plugins: [path.join(__dirname, '.dumi/theme/plugin')],
   // presets: ['@dumijs/preset-vue'],
 });
