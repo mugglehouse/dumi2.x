@@ -36,7 +36,7 @@ export default defineConfig({
       // 源代码所在路径，默认为 'src'
       sourcePath: 'src',
       // TypeScript文件所在子目录，默认为 'ts'
-      tsPath: 'ts',
+      tsPath: 'index',
       // 支持的文件扩展名，默认为 ['.ts', '.tsx']
       extensions: ['.ts', '.tsx']
     }
