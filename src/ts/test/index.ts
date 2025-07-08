@@ -51,14 +51,17 @@ export interface MuggleInterface {
   
   /** 类型 */
   export type MyType = 1 | 2 | 3 | 4
-  
+
+interface AddParams {
+    a: number;
+    b: number[];
+  }
 /**
  * 这是一个加法函数。
- * @param a - 第一个加数
- * @param b - 第二个加数
+ * @param params - 加数
  * @returns 两个加数的和
  */
-export function add(a: number = 0, b: number = 0): number {
-    return a + b;
+export function add(params:AddParams): number {
+  return params.b.reduce((acc, curr) => acc + curr, params.a);
 }
   

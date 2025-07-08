@@ -78,7 +78,10 @@ export interface AdvancedTypes {
   /** 方法签名 */
   method(param: string): void;
   
-  /** 函数属性 */
+  /** 函数属性 
+   * @param event - 事件
+   * @returns 返回值
+  */
   callback: (event: Event) => void;
   
   /** 泛型属性 */
