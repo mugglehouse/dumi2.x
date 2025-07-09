@@ -769,6 +769,16 @@ function generateApiTable(apiItems: ApiItem[]): string {
 }
 
 export default (api: IApi) => {
+  // 添加这段代码来描述插件
+  api.describe({
+    key: 'autoApiTable', // 使用唯一的键名，避免与内置插件冲突
+    config: {
+      schema(joi) {
+        return joi.object();
+      },
+    },
+  });
+  
   // 初始化阶段解析入口文件
   const initializePlugin = () => {
     parseEntryFile(api);
@@ -823,28 +833,58 @@ export default (api: IApi) => {
     key: 'dumi.registerBuildins',
     fn: () => {
       return {
-        ApiTable: path.join(__dirname, './builtins/ApiTable.tsx'),
+        ApiTable: path.join(__dirname, './.dumi/theme/builtins/ApiTable.tsx'),
       };
     },
   });
 
   // 注册API路由中间件，用于前端获取API数据
-  api.onBeforeMiddleware(({ app }: { app: any }) => {
-    app.get('/api/ts-api', (req: any, res: any) => {
-      const id = req.query.id as string;
-      
-      if (!id) {
-        return res.status(400).json({ error: '缺少id参数' });
+  api.register({
+    key: 'modifyDevHTMLContent',
+    fn: (memo, { req, res }) => {
+      // 检查路径是否匹配
+      if (req.path === '/api/ts-api') {
+        const id = req.query.id as string;
+        
+        if (!id) {
+          res.status(400).json({ error: '缺少id参数' });
+          return '';
+        }
+        
+        // 从导出模块映射中查找对应的模块
+        const apiItem = exportedModules.get(id);
+        
+        if (apiItem) {
+          res.json([apiItem]);
+        } else {
+          res.status(404).json({ error: `未找到API定义: ${id}` });
+        }
+        return '';
       }
-      
-      // 从导出模块映射中查找对应的模块
-      const apiItem = exportedModules.get(id);
-      
-      if (apiItem) {
-        res.json([apiItem]);
-      } else {
-        res.status(404).json({ error: `未找到API定义: ${id}` });
-      }
-    });
+      return memo;
+    },
+  });
+
+  // 注册API路由中间件
+  api.register({
+    key: 'onBeforeMiddleware',
+    fn: ({ app }) => {
+      app.get('/api/ts-api', (req, res) => {
+        const id = req.query.id as string;
+        
+        if (!id) {
+          return res.status(400).json({ error: '缺少id参数' });
+        }
+        
+        // 从导出模块映射中查找对应的模块
+        const apiItem = exportedModules.get(id);
+        
+        if (apiItem) {
+          res.json([apiItem]);
+        } else {
+          res.status(404).json({ error: `未找到API定义: ${id}` });
+        }
+      });
+    },
   });
 }; 

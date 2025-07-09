@@ -40,6 +40,7 @@ export default defineConfig({
   resolve: {
     entryFile: './src/index.ts',
   },
+  presets: ['./plugins/auto-api-table'],
   // 加载自定义插件
   // plugins: [path.join(__dirname, '.dumi/theme/plugin')],
   // presets: ['@dumijs/preset-vue'],
